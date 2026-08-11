@@ -3,6 +3,7 @@
 # El SALON (templates/ y static/) solo muestra informacion: no calcula ni decide.
 
 # -*- coding: utf-8 -*-
+from pathlib import Path  # LADRILLO: PATHLIB -> rutas sin depender de donde se corra
 import pandas as pd
 from flask import Flask, abort, render_template, request
 
@@ -12,8 +13,11 @@ from _validar_datos import calcular_promedio, decidir_certificado, normalizar_id
 app = Flask(__name__)
 
 # LADRILLO: VARIABLES -> rutas de la Bodega (los Excel, solo lectura)
-RUTA_MAESTRO = "Insumos/Maestro_Estudiantes.xlsx"
-RUTA_EVALUACIONES = "Insumos/Registro_Evaluaciones.xlsx"
+# Se construyen desde la carpeta de ESTE archivo, no desde la carpeta de trabajo
+# actual: asi la app funciona al ejecutarla desde cualquier directorio.
+CARPETA_APP = Path(__file__).resolve().parent
+RUTA_MAESTRO = CARPETA_APP / "Insumos" / "Maestro_Estudiantes.xlsx"
+RUTA_EVALUACIONES = CARPETA_APP / "Insumos" / "Registro_Evaluaciones.xlsx"
 
 
 # ---------- LADRILLO: FUNCIÓN (lee los dos Excel) ----------
