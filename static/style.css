@@ -1,0 +1,148 @@
+/* style.css — Diseño azul marino y dorado de Academia Horizonte
+   El Salón: solo estilos, no hay lógica de negocio aquí. */
+
+:root {
+    --azul-marino: #0f2a4a;      /* Color principal (encabezados y tablas) */
+    --azul-medio: #1d4370;
+    --dorado: #d4af37;           /* Acento dorado */
+    --dorado-claro: #f3e5ab;
+    --texto: #333333;
+    --blanco: #ffffff;
+    --verde: #218838;            /* Color del tipo Aprobacion */
+    --azul-acc: #1e6fc4;         /* Color del tipo Participacion */
+    --rojo: #c0392b;             /* Color del tipo Sin certificado */
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: var(--texto);
+}
+
+/* ---------- Encabezado azul marino con borde dorado ---------- */
+header {
+    background: linear-gradient(135deg, var(--azul-marino), var(--azul-medio));
+    color: var(--dorado);
+    text-align: center;
+    padding: 1.5rem;
+    border-bottom: 4px solid var(--dorado);
+}
+
+header h1 { margin: 0; font-size: 2rem; letter-spacing: 2px; }
+header p { margin: 0.25rem 0 0; color: var(--dorado-claro); }
+
+main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+
+/* ---------- Contadores (tarjetas) ---------- */
+.contadores {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.tarjeta {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+    padding: 1.25rem;
+    border-radius: 8px;
+    color: var(--blanco);
+    border-bottom: 4px solid var(--dorado);
+}
+
+.tarjeta .numero { font-size: 2.5rem; font-weight: bold; display: block; }
+.tarjeta .etiqueta { font-size: 0.9rem; }
+
+.tarjeta-verde { background-color: var(--verde); }
+.tarjeta-azul { background-color: var(--azul-acc); }
+.tarjeta-roja { background-color: var(--rojo); }
+
+/* ---------- Filtro por programa ---------- */
+.filtro { text-align: center; margin-bottom: 1.5rem; }
+.filtro label { margin-right: 0.5rem; font-weight: bold; }
+.filtro select {
+    padding: 0.5rem;
+    border: 2px solid var(--azul-medio);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+/* ---------- Tablas ---------- */
+.tabla {
+    background: var(--blanco);
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+    background: var(--azul-marino);
+    color: var(--dorado);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #e3e8ef; }
+tbody tr:hover { background-color: var(--dorado-claro); }
+
+a { color: var(--azul-medio); }
+
+/* ---------- Etiquetas de tipo de certificado ---------- */
+.tipo {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    color: var(--blanco);
+    font-size: 0.85rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.tipo-verde { background-color: var(--verde); }
+.tipo-azul { background-color: var(--azul-acc); }
+.tipo-rojo { background-color: var(--rojo); }
+
+/* ---------- Seccion de inconsistencias ---------- */
+.inconsistencias {
+    margin-top: 2rem;
+    background: #fff7e6;
+    border: 2px solid var(--dorado);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.inconsistencias h2 { color: var(--azul-marino); margin-top: 0; }
+
+/* ---------- Ficha de certificado (detalle) ---------- */
+.ficha {
+    background: var(--blanco);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.ficha h2 { color: var(--azul-marino); }
+
+dl {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0.5rem;
+}
+
+dt { font-weight: bold; color: var(--azul-medio); }
+dd { margin: 0; }
+
+/* ---------- Pie de pagina ---------- */
+footer {
+    text-align: center;
+    padding: 1rem;
+    color: var(--azul-marino);
+    border-top: 2px solid var(--dorado);
+    margin-top: 2rem;
+}

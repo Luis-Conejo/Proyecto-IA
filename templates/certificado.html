@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ c.nombre }} - Academia Horizonte</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Academia Horizonte</h1>
+        <p>Detalle del certificado</p>
+    </header>
+
+    <main>
+        <section class="ficha">
+            <h2>{{ c.nombre }}</h2>
+            <dl>
+                <dt>Identificación</dt><dd>{{ c.identificacion }}</dd>
+                <dt>Correo</dt><dd>{{ c.correo or "Sin datos" }}</dd>
+                <dt>Programa</dt><dd>{{ c.programa }}</dd>
+                <dt>Cohorte</dt><dd>{{ c.cohorte or "Sin datos" }}</dd>
+                <dt>Módulos cursados</dt><dd>{{ c.modulos }}</dd>
+                <dt>Promedio</dt><dd>{{ c.promedio }}</dd>
+                <dt>Asistencia promedio</dt><dd>{{ c.asistencia }}</dd>
+                <dt>Certificado</dt>
+                <dd>
+                    <span class="tipo {% if c.tipo == 'Aprobacion' %}tipo-verde{% elif c.tipo == 'Participacion' %}tipo-azul{% else %}tipo-rojo{% endif %}">
+                        {{ c.tipo }}
+                    </span>
+                </dd>
+            </dl>
+            <p><a href="/">Volver al listado</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Academia Horizonte - Cohorte 2026-A</p>
+    </footer>
+</body>
+</html>

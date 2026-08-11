@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia Horizonte - Certificados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Academia Horizonte</h1>
+        <p>Emisión de certificados por cohorte</p>
+    </header>
+
+    <main>
+        <!-- Contadores de certificados (los calcula la Cocina, aqui solo se muestran) -->
+        <section class="contadores">
+            <div class="tarjeta tarjeta-verde">
+                <span class="numero">{{ totales.aprobacion }}</span>
+                <span class="etiqueta">Certificados de Aprobación</span>
+            </div>
+            <div class="tarjeta tarjeta-azul">
+                <span class="numero">{{ totales.participacion }}</span>
+                <span class="etiqueta">Certificados de Participación</span>
+            </div>
+            <div class="tarjeta tarjeta-roja">
+                <span class="numero">{{ totales.sin_certificado }}</span>
+                <span class="etiqueta">Estudiantes sin certificado</span>
+            </div>
+        </section>
+
+        <!-- Filtro por programa (la pagina reenvia el GET; el filtrado lo hace el backend) -->
+        <section class="filtro">
+            <form method="get" action="/">
+                <label for="programa">Filtrar por programa:</label>
+                <select name="programa" id="programa" onchange="this.form.submit()">
+                    <option value="Todos" {% if filtro == "Todos" %}selected{% endif %}>Todos</option>
+                    {% for p in programas %}
+                    <option value="{{ p }}" {% if filtro == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button type="submit">Filtrar</button></noscript>
+            </form>
+        </section>
+
+        <!-- Tabla de resultados: solo certificados emitibles -->
+        <section class="tabla">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Identificación</th>
+                        <th>Programa</th>
+                        <th>Módulos</th>
+                        <th>Promedio</th>
+                        <th>Asistencia</th>
+                        <th>Certificado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in certificados %}
+                    <tr>
+                        <td><a href="/certificado/{{ c.identificacion }}">{{ c.nombre }}</a></td>
+                        <td>{{ c.identificacion }}</td>
+                        <td>{{ c.programa }}</td>
+                        <td>{{ c.modulos }}</td>
+                        <td>{{ c.promedio }}</td>
+                        <td>{{ c.asistencia }}</td>
+                        <td>
+                            <span class="tipo {% if c.tipo == 'Aprobacion' %}tipo-verde{% elif c.tipo == 'Participacion' %}tipo-azul{% else %}tipo-rojo{% endif %}">
+                                {{ c.tipo }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7">No hay certificados para este programa.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Seccion de inconsistencias detectadas en el cruce de datos -->
+        <section class="inconsistencias">
+            <h2>Inconsistencias detectadas ({{ inconsistencias | length }})</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Identificación</th>
+                        <th>Nombre</th>
+                        <th>Programa</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in inconsistencias %}
+                    <tr>
+                        <td><span class="tipo tipo-rojo">{{ i.tipo }}</span></td>
+                        <td>{{ i.identificacion }}</td>
+                        <td>{{ i.nombre }}</td>
+                        <td>{{ i.programa }}</td>
+                        <td>{{ i.detalle }}{% if i.promedio %} (promedio {{ i.promedio }}, asistencia {{ i.asistencia }}){% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <p>Academia Horizonte - Cohorte 2026-A</p>
+    </footer>
+</body>
+</html>
