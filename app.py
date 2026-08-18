@@ -3,14 +3,20 @@
 # El SALON (templates/ y static/) solo muestra informacion: no calcula ni decide.
 
 # -*- coding: utf-8 -*-
+import hashlib  # LADRILLO: LIBRERIA -> para guardar claves cifradas, nunca en texto plano
+import json     # LADRILLO: LIBRERIA -> para guardar los usuarios en un archivo
+from functools import wraps  # LADRILLO: LIBRERIA -> para crear el decorador de login
 from pathlib import Path  # LADRILLO: PATHLIB -> rutas sin depender de donde se corra
 import pandas as pd
-from flask import Flask, abort, render_template, request
+from flask import Flask, abort, redirect, render_template, request, session, url_for
 
 from _validar_datos import calcular_promedio, decidir_certificado, normalizar_id
 
 # LADRILLO: VARIABLE -> creamos la aplicacion Flask
 app = Flask(__name__)
+
+# LADRILLO: VARIABLE -> clave secreta para firmar las sesiones (quien entra y quien no)
+app.secret_key = "academia-horizonte-certificados-2026"
 
 # LADRILLO: VARIABLES -> rutas de la Bodega (los Excel, solo lectura)
 # Se construyen desde la carpeta de ESTE archivo, no desde la carpeta de trabajo
@@ -18,6 +24,63 @@ app = Flask(__name__)
 CARPETA_APP = Path(__file__).resolve().parent
 RUTA_MAESTRO = CARPETA_APP / "Insumos" / "Maestro_Estudiantes.xlsx"
 RUTA_EVALUACIONES = CARPETA_APP / "Insumos" / "Registro_Evaluaciones.xlsx"
+
+# ---------- AUTENTICACION: quien puede entrar (Cocina, regla de negocio) ----------
+# LADRILLO: VARIABLE de TIPO diccionario -> el unico administrador, fijo en el codigo.
+# Es el ADMIN quien da acceso a los usuarios normales (correo + clave asignada).
+ADMIN = {"correo": "lconejomonge@gmail.com", "clave": "LUIS.CONEJO"}
+
+# LADRILLO: VARIABLE -> archivo donde se guardan los usuarios creados por el admin
+RUTA_USUARIOS = CARPETA_APP / "usuarios.json"
+
+
+# ---------- LADRILLO: FUNCIÓN (cifra una clave) ----------
+def cifrar_clave(clave):
+    """Devuelve la clave convertida en codigo irreconocible (hash).
+    Asi el archivo de usuarios nunca guarda claves en texto plano."""
+    return hashlib.sha256(clave.encode("utf-8")).hexdigest()
+
+
+# ---------- LADRILLO: FUNCIÓN (lee los usuarios creados por el admin) ----------
+def leer_usuarios():
+    """Lee usuarios.json y devuelve un diccionario {correo: clave_cifrada}.
+    Si el archivo aun no existe, devuelve un diccionario vacio."""
+    if not RUTA_USUARIOS.exists():  # LADRILLO: CONDICIONAL
+        return {}
+    with open(RUTA_USUARIOS, encoding="utf-8") as archivo:
+        return json.load(archivo)
+
+
+# ---------- LADRILLO: FUNCIÓN (guarda un usuario nuevo) ----------
+def guardar_usuario(correo, clave):
+    """Agrega (o reemplaza) un usuario normal en usuarios.json con su clave cifrada."""
+    usuarios = leer_usuarios()
+    usuarios[correo.strip().lower()] = cifrar_clave(clave)
+    with open(RUTA_USUARIOS, "w", encoding="utf-8") as archivo:
+        json.dump(usuarios, archivo, ensure_ascii=False, indent=2)
+
+
+# ---------- LADRILLO: FUNCIÓN (revisa si correo y clave son validos) ----------
+def credenciales_validas(correo, clave):
+    """Devuelve True si el correo existe y la clave coincide (admin o usuario normal)."""
+    correo = correo.strip().lower()
+    # LADRILLO: CONDICIONAL -> primero revisamos al administrador fijo
+    if correo == ADMIN["correo"] and clave == ADMIN["clave"]:
+        return True
+    # LADRILLO: CONDICIONAL -> luego los usuarios creados por el admin
+    usuarios = leer_usuarios()
+    return correo in usuarios and usuarios[correo] == cifrar_clave(clave)
+
+
+# ---------- LADRILLO: FUNCIÓN decoradora (el "portero" de las paginas) ----------
+def requiere_login(vista):
+    """Decorador: si no hay usuario en la sesion, manda a la pantalla de entrada."""
+    @wraps(vista)
+    def vista_protegida(*args, **kwargs):
+        if "correo" not in session:  # LADRILLO: CONDICIONAL -> sin sesion, al login
+            return redirect(url_for("login"))
+        return vista(*args, **kwargs)
+    return vista_protegida
 
 
 # ---------- LADRILLO: FUNCIÓN (lee los dos Excel) ----------
@@ -118,7 +181,53 @@ def calcular_resultados(df_maestro, df_eval):
 
 
 # ---------- LADRILLO: rutas del servidor (la Cocina) ----------
+# ---------- Pantalla de entrada (login) ----------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Pantalla de entrada: pide correo y clave. Si son validos, abre sesion."""
+    error = ""
+    if request.method == "POST":  # LADRILLO: CONDICIONAL -> el usuario envio el formulario
+        correo = request.form.get("correo", "")
+        clave = request.form.get("clave", "")
+        if credenciales_validas(correo, clave):  # LADRILLO: CONDICIONAL
+            session["correo"] = correo.strip().lower()  # LADRILLO: VARIABLE -> sesion iniciada
+            # El admin entra directo a su panel; los demas a los certificados
+            if session["correo"] == ADMIN["correo"]:
+                return redirect(url_for("admin"))
+            return redirect(url_for("index"))
+        error = "Correo o contraseña incorrectos."
+    return render_template("login.html", error=error)
+
+
+# ---------- Cerrar sesion ----------
+@app.route("/logout")
+def logout():
+    """Cierra la sesion y regresa a la pantalla de entrada."""
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------- Panel del administrador: aqui da acceso a usuarios normales ----------
+@app.route("/admin", methods=["GET", "POST"])
+@requiere_login
+def admin():
+    """Solo el admin: crea usuarios normales (correo + clave asignada) y los lista."""
+    if session["correo"] != ADMIN["correo"]:  # LADRILLO: CONDICIONAL -> no es admin, fuera
+        return redirect(url_for("index"))
+    mensaje = ""
+    if request.method == "POST":  # LADRILLO: CONDICIONAL -> el admin envio el formulario
+        correo = request.form.get("correo", "").strip().lower()
+        clave = request.form.get("clave", "")
+        if correo and clave:  # LADRILLO: CONDICIONAL -> ambos campos con texto
+            guardar_usuario(correo, clave)
+            mensaje = f"Acceso creado para {correo}."
+        else:
+            mensaje = "Escribe correo y contraseña."
+    return render_template("admin.html", usuarios=leer_usuarios(), mensaje=mensaje)
+
+
 @app.route("/")
+@requiere_login
 def index():
     """Pagina principal: contadores, filtro por programa y tabla de certificados."""
     df_maestro, df_eval = leer_datos()
@@ -145,6 +254,7 @@ def index():
 
 
 @app.route("/certificado/<identificacion>")
+@requiere_login
 def certificado(identificacion):
     """Ficha de un estudiante; devuelve 404 si la identificacion no existe."""
     df_maestro, df_eval = leer_datos()

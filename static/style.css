@@ -146,3 +146,110 @@ footer {
     border-top: 2px solid var(--dorado);
     margin-top: 2rem;
 }
+
+/* ---------- Pantalla de entrada (login) ---------- */
+.pagina-login {
+    background: linear-gradient(135deg, var(--azul-marino), var(--azul-medio));
+    min-height: 100vh;
+}
+
+.login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0 1rem;
+}
+
+.tarjeta-login {
+    background: var(--blanco);
+    border-top: 4px solid var(--dorado);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 2rem;
+    width: 100%;
+    max-width: 360px;
+}
+
+.tarjeta-login h1 {
+    color: var(--azul-marino);
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.tarjeta-login p {
+    color: var(--azul-medio);
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.tarjeta-login label { display: block; margin-top: 1rem; font-weight: bold; color: var(--azul-marino); }
+
+.tarjeta-login input {
+    width: 100%;
+    padding: 0.6rem;
+    margin-top: 0.25rem;
+    border: 2px solid var(--azul-medio);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.tarjeta-login button {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 0.75rem;
+    background: var(--azul-marino);
+    color: var(--dorado);
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.tarjeta-login button:hover { background: var(--azul-medio); }
+
+.error {
+    background: var(--rojo);
+    color: var(--blanco);
+    padding: 0.5rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.mensaje {
+    background: var(--dorado-claro);
+    border: 1px solid var(--dorado);
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
+/* ---------- Formularios del panel de administracion ---------- */
+.ficha form label { display: block; margin-top: 1rem; font-weight: bold; color: var(--azul-marino); }
+
+.ficha form input {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.6rem;
+    margin-top: 0.25rem;
+    border: 2px solid var(--azul-medio);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.ficha form button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--azul-marino);
+    color: var(--dorado);
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.ficha form button:hover { background: var(--azul-medio); }
