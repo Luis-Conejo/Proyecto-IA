@@ -3,8 +3,6 @@
 # El SALON (templates/ y static/) solo muestra informacion: no calcula ni decide.
 
 # -*- coding: utf-8 -*-
-import hashlib  # LADRILLO: LIBRERIA -> para guardar claves cifradas, nunca en texto plano
-import json     # LADRILLO: LIBRERIA -> para guardar los usuarios en un archivo
 import os       # LADRILLO: LIBRERIA -> para leer secretos de variables de entorno (Vercel)
 from functools import wraps  # LADRILLO: LIBRERIA -> para crear el decorador de login
 from pathlib import Path  # LADRILLO: PATHLIB -> rutas sin depender de donde se corra
@@ -30,56 +28,19 @@ RUTA_EVALUACIONES = CARPETA_APP / "Insumos" / "Registro_Evaluaciones.xlsx"
 # ---------- AUTENTICACION: quien puede entrar (Cocina, regla de negocio) ----------
 # LADRILLO: VARIABLE de TIPO diccionario -> el unico administrador.
 # En Vercel se configura con las variables de entorno ADMIN_CORREO y ADMIN_CLAVE;
-# en local usa estos valores por defecto. Es el ADMIN quien da acceso a los usuarios.
+# en local usa estos valores por defecto. Solo el ADMIN puede entrar a la app.
 ADMIN = {
     "correo": os.environ.get("ADMIN_CORREO", "lconejomonge@gmail.com"),
     "clave": os.environ.get("ADMIN_CLAVE", "LUIS.CONEJO"),
 }
 
-# LADRILLO: VARIABLE -> archivo donde se guardan los usuarios creados por el admin
-# En Vercel el disco es de solo lectura salvo /tmp, asi que ahi se guarda en /tmp.
-if os.environ.get("VERCEL"):  # LADRILLO: CONDICIONAL -> estamos en Vercel
-    RUTA_USUARIOS = Path("/tmp/usuarios.json")
-else:
-    RUTA_USUARIOS = CARPETA_APP / "usuarios.json"
-
-
-# ---------- LADRILLO: FUNCIÓN (cifra una clave) ----------
-def cifrar_clave(clave):
-    """Devuelve la clave convertida en codigo irreconocible (hash).
-    Asi el archivo de usuarios nunca guarda claves en texto plano."""
-    return hashlib.sha256(clave.encode("utf-8")).hexdigest()
-
-
-# ---------- LADRILLO: FUNCIÓN (lee los usuarios creados por el admin) ----------
-def leer_usuarios():
-    """Lee usuarios.json y devuelve un diccionario {correo: clave_cifrada}.
-    Si el archivo aun no existe, devuelve un diccionario vacio."""
-    if not RUTA_USUARIOS.exists():  # LADRILLO: CONDICIONAL
-        return {}
-    with open(RUTA_USUARIOS, encoding="utf-8") as archivo:
-        return json.load(archivo)
-
-
-# ---------- LADRILLO: FUNCIÓN (guarda un usuario nuevo) ----------
-def guardar_usuario(correo, clave):
-    """Agrega (o reemplaza) un usuario normal en usuarios.json con su clave cifrada."""
-    usuarios = leer_usuarios()
-    usuarios[correo.strip().lower()] = cifrar_clave(clave)
-    with open(RUTA_USUARIOS, "w", encoding="utf-8") as archivo:
-        json.dump(usuarios, archivo, ensure_ascii=False, indent=2)
-
 
 # ---------- LADRILLO: FUNCIÓN (revisa si correo y clave son validos) ----------
 def credenciales_validas(correo, clave):
-    """Devuelve True si el correo existe y la clave coincide (admin o usuario normal)."""
+    """Devuelve True solo si el correo y la clave son los del administrador."""
     correo = correo.strip().lower()
-    # LADRILLO: CONDICIONAL -> primero revisamos al administrador fijo
-    if correo == ADMIN["correo"] and clave == ADMIN["clave"]:
-        return True
-    # LADRILLO: CONDICIONAL -> luego los usuarios creados por el admin
-    usuarios = leer_usuarios()
-    return correo in usuarios and usuarios[correo] == cifrar_clave(clave)
+    # LADRILLO: CONDICIONAL -> solo entra el administrador
+    return correo == ADMIN["correo"] and clave == ADMIN["clave"]
 
 
 # ---------- LADRILLO: FUNCIÓN decoradora (el "portero" de las paginas) ----------
@@ -201,10 +162,7 @@ def login():
         clave = request.form.get("clave", "")
         if credenciales_validas(correo, clave):  # LADRILLO: CONDICIONAL
             session["correo"] = correo.strip().lower()  # LADRILLO: VARIABLE -> sesion iniciada
-            # El admin entra directo a su panel; los demas a los certificados
-            if session["correo"] == ADMIN["correo"]:
-                return redirect(url_for("admin"))
-            return redirect(url_for("index"))
+            return redirect(url_for("index"))  # entra directo a los certificados
         error = "Correo o contraseña incorrectos."
     return render_template("login.html", error=error)
 
@@ -215,25 +173,6 @@ def logout():
     """Cierra la sesion y regresa a la pantalla de entrada."""
     session.clear()
     return redirect(url_for("login"))
-
-
-# ---------- Panel del administrador: aqui da acceso a usuarios normales ----------
-@app.route("/admin", methods=["GET", "POST"])
-@requiere_login
-def admin():
-    """Solo el admin: crea usuarios normales (correo + clave asignada) y los lista."""
-    if session["correo"] != ADMIN["correo"]:  # LADRILLO: CONDICIONAL -> no es admin, fuera
-        return redirect(url_for("index"))
-    mensaje = ""
-    if request.method == "POST":  # LADRILLO: CONDICIONAL -> el admin envio el formulario
-        correo = request.form.get("correo", "").strip().lower()
-        clave = request.form.get("clave", "")
-        if correo and clave:  # LADRILLO: CONDICIONAL -> ambos campos con texto
-            guardar_usuario(correo, clave)
-            mensaje = f"Acceso creado para {correo}."
-        else:
-            mensaje = "Escribe correo y contraseña."
-    return render_template("admin.html", usuarios=leer_usuarios(), mensaje=mensaje)
 
 
 @app.route("/")
