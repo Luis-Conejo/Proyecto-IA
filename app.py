@@ -5,6 +5,7 @@
 # -*- coding: utf-8 -*-
 import hashlib  # LADRILLO: LIBRERIA -> para guardar claves cifradas, nunca en texto plano
 import json     # LADRILLO: LIBRERIA -> para guardar los usuarios en un archivo
+import os       # LADRILLO: LIBRERIA -> para leer secretos de variables de entorno (Vercel)
 from functools import wraps  # LADRILLO: LIBRERIA -> para crear el decorador de login
 from pathlib import Path  # LADRILLO: PATHLIB -> rutas sin depender de donde se corra
 import pandas as pd
@@ -16,7 +17,8 @@ from _validar_datos import calcular_promedio, decidir_certificado, normalizar_id
 app = Flask(__name__)
 
 # LADRILLO: VARIABLE -> clave secreta para firmar las sesiones (quien entra y quien no)
-app.secret_key = "academia-horizonte-certificados-2026"
+# En Vercel se configura como variable de entorno SECRET_KEY; en local usa este valor.
+app.secret_key = os.environ.get("SECRET_KEY", "academia-horizonte-certificados-2026")
 
 # LADRILLO: VARIABLES -> rutas de la Bodega (los Excel, solo lectura)
 # Se construyen desde la carpeta de ESTE archivo, no desde la carpeta de trabajo
@@ -26,12 +28,20 @@ RUTA_MAESTRO = CARPETA_APP / "Insumos" / "Maestro_Estudiantes.xlsx"
 RUTA_EVALUACIONES = CARPETA_APP / "Insumos" / "Registro_Evaluaciones.xlsx"
 
 # ---------- AUTENTICACION: quien puede entrar (Cocina, regla de negocio) ----------
-# LADRILLO: VARIABLE de TIPO diccionario -> el unico administrador, fijo en el codigo.
-# Es el ADMIN quien da acceso a los usuarios normales (correo + clave asignada).
-ADMIN = {"correo": "lconejomonge@gmail.com", "clave": "LUIS.CONEJO"}
+# LADRILLO: VARIABLE de TIPO diccionario -> el unico administrador.
+# En Vercel se configura con las variables de entorno ADMIN_CORREO y ADMIN_CLAVE;
+# en local usa estos valores por defecto. Es el ADMIN quien da acceso a los usuarios.
+ADMIN = {
+    "correo": os.environ.get("ADMIN_CORREO", "lconejomonge@gmail.com"),
+    "clave": os.environ.get("ADMIN_CLAVE", "LUIS.CONEJO"),
+}
 
 # LADRILLO: VARIABLE -> archivo donde se guardan los usuarios creados por el admin
-RUTA_USUARIOS = CARPETA_APP / "usuarios.json"
+# En Vercel el disco es de solo lectura salvo /tmp, asi que ahi se guarda en /tmp.
+if os.environ.get("VERCEL"):  # LADRILLO: CONDICIONAL -> estamos en Vercel
+    RUTA_USUARIOS = Path("/tmp/usuarios.json")
+else:
+    RUTA_USUARIOS = CARPETA_APP / "usuarios.json"
 
 
 # ---------- LADRILLO: FUNCIÓN (cifra una clave) ----------
